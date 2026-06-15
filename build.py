@@ -10,6 +10,7 @@ import os
 import re
 import json
 import sys
+import argparse
 
 from io import StringIO
 
@@ -23,6 +24,24 @@ try:
 except ImportError:
     print("Missing dependencies. Run: pip install -r requirements.txt", file=sys.stderr)
     sys.exit(1)
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+parser = argparse.ArgumentParser(description="Build the email newsletter template.")
+parser.add_argument(
+    "--debug",
+    action="store_true",
+    help="Enable full terminal output and write template.html to disk.",
+)
+args, _ = parser.parse_known_args()
+DEBUG = args.debug
+
+
+def log(*args, **kwargs):
+    """Print only in debug mode."""
+    if DEBUG:
+        print(*args, **kwargs)
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -195,22 +214,28 @@ def fetch_sermon_data():
         print("⚠️  API returned non-JSON response", file=sys.stderr)
         return None
 
-    if body.get("status") != "success":
-        print(f"⚠️  API script status: {body.get('status')} — {body.get('stderr', '')[:200]}", file=sys.stderr)
-        return None
+    # Handle multiple API response formats:
+    #   {"result": { ...data... }}             — ScriptDash with parsed result
+    #   {"output": "{ ...json... }"}           — ScriptDash raw output string
+    #   {"status": "success", "stdout": "..."} — older ScriptDash format
+    result = body.get("result")
+    if result and isinstance(result, dict):
+        return result
 
-    stdout_str = body.get("stdout", "")
-    if not stdout_str:
-        print("⚠️  API returned empty stdout", file=sys.stderr)
+    raw = body.get("output") or body.get("stdout") or ""
+    if not raw:
+        status = body.get("status", "unknown")
+        if status != "success":
+            print(f"⚠️  API script status: {status} — {body.get('stderr', '')[:200]}", file=sys.stderr)
+        else:
+            print("⚠️  API returned no output data", file=sys.stderr)
         return None
 
     try:
-        data = json.loads(stdout_str)
+        return json.loads(raw) if isinstance(raw, str) else raw
     except json.JSONDecodeError as exc:
-        print(f"⚠️  Failed to parse API stdout as JSON: {exc}", file=sys.stderr)
+        print(f"⚠️  Failed to parse API response as JSON: {exc}", file=sys.stderr)
         return None
-
-    return data
 
 
 # ---------------------------------------------------------------------------
@@ -542,11 +567,11 @@ def fetch_github_file(github_url: str, local_path: str, label: str) -> str:
         resp = requests.get(github_url, timeout=10)
         resp.raise_for_status()
         content = resp.text
-        print(f"⬇️  Fetched {label} from GitHub")
+        log(f"⬇️  Fetched {label} from GitHub")
         return content
     except requests.RequestException as exc:
-        print(f"⚠️  Could not fetch {label} from GitHub: {exc}", file=sys.stderr)
-        print(f"📂 Using local {label} instead.", file=sys.stderr)
+        log(f"⚠️  Could not fetch {label} from GitHub: {exc}")
+        log(f"📂 Using local {label} instead.")
         with open(local_path, "r", encoding="utf-8") as f:
             return f.read()
 
@@ -560,28 +585,31 @@ def main():
     css_content = fetch_github_file(github_css_url, css_path, "styles.css")
 
     # Phase 1: Inline CSS
-    print("📝 Inlining CSS…")
+    log("📝 Inlining CSS…")
     inlined = inline_css(html_content, css_content)
 
     # Phase 2: Fetch data from API
-    print("🌐 Fetching sermon data from API…")
+    log("🌐 Fetching sermon data from API…")
     data = fetch_sermon_data()
 
     if data:
         # Phase 3 & 4: Build blocks and replace placeholders
-        print("🔧 Building content blocks…")
+        log("🔧 Building content blocks…")
         blocks = build_blocks(data)
         final_html = replace_placeholders(inlined, blocks)
-        print("✅ Data successfully applied from API.")
+        log("✅ Data successfully applied from API.")
     else:
-        print("⚠️  Keeping placeholders — API data unavailable.")
+        log("⚠️  Keeping placeholders — API data unavailable.")
         final_html = inlined
 
-    # Write output
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(final_html)
-
-    print(f"📄 Output written to {output_path}")
+    if DEBUG:
+        # Debug mode: write to file
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(final_html)
+        print(f"📄 Output written to {output_path}")
+    else:
+        # JSON mode: output to stdout for API consumption
+        sys.stdout.write(json.dumps({"html": final_html}))
 
 
 if __name__ == "__main__":
