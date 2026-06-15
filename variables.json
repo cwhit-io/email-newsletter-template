@@ -1,0 +1,29 @@
+{
+  "fetched_at": "2026-06-15T03:36:39.918597+00:00",
+  "sources": {
+    "facebook": {
+      "found": true,
+      "url": "https://www.facebook.com/reel/1326133276323085/"
+    },
+    "instagram": {
+      "found": true,
+      "url": "https://www.instagram.com/reel/DZVcoMfDrbI/"
+    },
+    "youtube": {
+      "found": true,
+      "url": "https://www.youtube.com/shorts/gvfPvgfRtz4",
+      "thumbnail": "https://img.youtube.com/vi/gvfPvgfRtz4/maxresdefault.jpg"
+    },
+    "sermon": {
+      "found": true,
+      "data": {
+        "title": "I Samuel 18:1-5",
+        "description": null,
+        "url": "https://blackhawk.churchcenter.com/episodes/617524",
+        "video_url": "https://vimeo.com/1199197220",
+        "thumbnail": "https://i.vimeocdn.com/video/2168482567-4b0830bf941999e7eab7a68df9e7cab8ba713c08901a6e0e605a4931c4ca0e13-d_1920x1080",
+        "resources": []
+      }
+    }
+  }
+}

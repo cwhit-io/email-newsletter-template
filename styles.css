@@ -468,6 +468,32 @@ a[x-apple-data-detectors],
   padding: 0;
 }
 
+.sender-info-cell {
+  background-color: #0f0f0f;
+  padding: 12px 32px;
+  text-align: center;
+}
+
+.sender-info-text {
+  font-size: 10px;
+  color: #777777;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
+}
+
+.unsubscribe-cell {
+  background-color: #0f0f0f;
+  padding: 16px 32px;
+  text-align: center;
+}
+
+.unsubscribe-link {
+  font-size: 11px;
+  color: #888888;
+  text-decoration: none !important;
+}
+
 @media screen and (max-width: 600px) {
   .container {
     width: 100% !important;
@@ -556,5 +582,13 @@ a[x-apple-data-detectors],
 
   .social-btn {
     margin-bottom: 10px !important;
+  }
+
+  .sender-info-cell {
+    padding: 10px 20px !important;
+  }
+
+  .unsubscribe-cell {
+    padding: 12px 20px !important;
   }
 }
